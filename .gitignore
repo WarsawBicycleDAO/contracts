@@ -12,3 +12,7 @@ docs/
 
 # Dotenv file
 .env
+
+!out/NFTAuction.sol/
+!out/WarsawBikeNFT.sol/
+!out/Proposals.sol/
