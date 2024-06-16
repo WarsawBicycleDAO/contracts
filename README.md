@@ -1,19 +1,16 @@
-## Foundry
+## Warsaw Bycicles Club
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+**Smart contracts from Warsaw Bycicles Club project**
 
-Foundry consists of:
+Contracts:
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
-
-https://book.getfoundry.sh/
+- **WarsawBikeNFT**: `OpenZeppelin`'s ERC721 contract with `Enumerable` and `URIStorage` extensions.
+- **NFTAuction**: Contract that auctions one `WarsawBikeNFT` everyday, highest bidder wins, others get refunded.
+- **ProposalPlatform**: Whitelisted wallets can create proposals and holder of `WarsawBikeNFT` can vote on them. Every two months the two most upvoted proposals get executed.
 
 ## Usage
+
+You need to populate `.env` first. `RPC_ENDPOINT` must be of Avalanche Fuji network.
 
 ### Build
 
@@ -27,40 +24,9 @@ $ forge build
 $ forge test
 ```
 
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
 ### Deploy
 
 ```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
+$ source .env
+$ forge script script/Deploy.s.sol:DeployScript --chain avalanche --rpc-url $RPC_ENDPOINT -vvvv
 ```

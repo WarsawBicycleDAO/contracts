@@ -95,11 +95,11 @@ contract NFTAuction is Ownable {
     }
 
     function onERC721Received(
-        address _operator,
+        address operator,
         address from,
         uint256 tokenId,
         bytes calldata data
-    ) external returns (bytes4) {
+    ) external pure returns (bytes4) {
         return this.onERC721Received.selector;
     }
 }
