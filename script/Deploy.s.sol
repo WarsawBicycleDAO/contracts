@@ -9,7 +9,7 @@ import "src/WarsawBikeNFT.sol";
 contract DeployScript is Script {
     NFTAuction public auction;
     WarsawBikeNFT public nftContract;
-    ProposalDAO public proposals;
+    ProposalPlatform public proposals;
 
     function setUp() public {}
 
@@ -20,7 +20,7 @@ contract DeployScript is Script {
         auction = new NFTAuction();
         nftContract = new WarsawBikeNFT(address(auction));
         auction.setNFTContract(address(nftContract));
-        proposals = new ProposalDAO(address(nftContract), 1 days);
+        proposals = new ProposalPlatform(address(nftContract));
 
         console.log("Auction address: ", address(auction));
         console.log("NFT contract address: ", address(nftContract));

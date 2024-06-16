@@ -4,38 +4,38 @@ pragma solidity ^0.8.20;
 import "./interfaces/IWarsawBikeNFT.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract ProposalDAO is Ownable {
+contract ProposalPlatform is Ownable {
     struct Proposal {
         uint256 id;
         address proposer;
         string description;
-        uint256 startBlock;
-        uint256 endBlock;
+        uint256 startTime;
+        uint256 endTime;
+        uint256 requestedAmount;
         mapping(address => bool) hasVoted;
-        uint256 votes;
         uint256 totalVotes;
         bool executed;
     }
 
     uint256 public proposalCount;
-    uint256 public proposalDuration;
-    IWarsawBikeNFT public nftContract;
+    IERC721 public nftContract;
     mapping(uint256 => Proposal) public proposals;
     mapping(address => bool) public whitelist;
     uint256 public lastExecutionTime;
     uint256 public executionInterval = 60 days;
 
-    event ProposalCreated(uint256 id, address proposer, string description);
+    event ProposalCreated(
+        uint256 id,
+        address proposer,
+        string description,
+        uint256 requestedAmount
+    );
     event Voted(uint256 proposalId, address voter);
     event ProposalExecuted(uint256 id);
     event ProposalDeclined(uint256 id);
 
-    constructor(
-        address _nftContract,
-        uint256 _proposalDuration
-    ) Ownable(msg.sender) {
-        nftContract = IWarsawBikeNFT(_nftContract);
-        proposalDuration = _proposalDuration;
+    constructor(address _nftContract) Ownable(msg.sender) {
+        nftContract = IERC721(_nftContract);
         lastExecutionTime = block.timestamp;
     }
 
@@ -61,18 +61,29 @@ contract ProposalDAO is Ownable {
     }
 
     function createProposal(
-        string memory description
+        string memory description,
+        uint256 requestedAmount
     ) external onlyWhitelisted {
         uint256 proposalId = proposalCount++;
+        uint256 remainingTime = lastExecutionTime +
+            executionInterval -
+            block.timestamp;
+
         Proposal storage proposal = proposals[proposalId];
         proposal.id = proposalId;
         proposal.proposer = msg.sender;
         proposal.description = description;
-        proposal.startBlock = block.number;
-        proposal.endBlock = block.number + proposalDuration;
+        proposal.startTime = block.timestamp;
+        proposal.endTime = block.timestamp + remainingTime;
+        proposal.requestedAmount = requestedAmount;
         proposal.executed = false;
 
-        emit ProposalCreated(proposalId, msg.sender, description);
+        emit ProposalCreated(
+            proposalId,
+            msg.sender,
+            description,
+            requestedAmount
+        );
     }
 
     function vote(
@@ -81,12 +92,11 @@ contract ProposalDAO is Ownable {
     ) external proposalExists(proposalId) {
         Proposal storage proposal = proposals[proposalId];
         require(
-            block.number >= proposal.startBlock,
+            block.timestamp >= proposal.startTime,
             "Voting has not started yet"
         );
-        require(block.number <= proposal.endBlock, "Voting period has ended");
+        require(block.timestamp <= proposal.endTime, "Voting period has ended");
         require(!proposal.hasVoted[msg.sender], "You have already voted");
-
         require(
             nftContract.ownerOf(nftId) == msg.sender,
             "You do not own this NFT"
@@ -126,12 +136,24 @@ contract ProposalDAO is Ownable {
         }
 
         if (highestVotes > 0) {
-            proposals[highestProposalId].executed = true;
+            Proposal storage highestProposal = proposals[highestProposalId];
+            highestProposal.executed = true;
+            (bool success, ) = highestProposal.proposer.call{
+                value: highestProposal.requestedAmount
+            }("");
+            require(success, "Transfer failed");
             emit ProposalExecuted(highestProposalId);
         }
 
         if (secondHighestVotes > 0) {
-            proposals[secondHighestProposalId].executed = true;
+            Proposal storage secondHighestProposal = proposals[
+                secondHighestProposalId
+            ];
+            secondHighestProposal.executed = true;
+            (bool success, ) = secondHighestProposal.proposer.call{
+                value: secondHighestProposal.requestedAmount
+            }("");
+            require(success, "Transfer failed");
             emit ProposalExecuted(secondHighestProposalId);
         }
 
@@ -146,4 +168,10 @@ contract ProposalDAO is Ownable {
 
         lastExecutionTime = block.timestamp;
     }
+
+    // Function to receive Ether. msg.data must be empty
+    receive() external payable {}
+
+    // Fallback function is called when msg.data is not empty
+    fallback() external payable {}
 }
